@@ -4,6 +4,7 @@ setup.cfg
 setup.py
 minitwit/__init__.py
 minitwit/minitwit.py
+minitwit/mt_api.py
 minitwit/schema.sql
 minitwit.egg-info/PKG-INFO
 minitwit.egg-info/SOURCES.txt

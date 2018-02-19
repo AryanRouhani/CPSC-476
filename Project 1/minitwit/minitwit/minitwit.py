@@ -48,10 +48,13 @@ def close_database(exception):
     if hasattr(top, 'sqlite_db'):
         top.sqlite_db.close()
 
-#modified minitwit.py for Project 1 begins here
 def populate_db():
     #populate the DATABASE
     db = get_db()
+    db.execute('''INSERT INTO user (username, email, pw_hash)
+                VALUES (?,?,?)''', ['obbo','ob@mgail.com', generate_password_hash('123')])
+    db.execute('''INSERT INTO user (username, email, pw_hash)
+                VALUES (?,?,?)''', ['bobjUmbo', 'bobjumbo@gmail.com', generate_password_hash('1234')])
     with app.open_resource('population.sql', mode = 'r') as f:
         #print f.read()
         db.cursor().executescript(f.read())
@@ -62,7 +65,6 @@ def populate_db_command():
     populate_db()
     print('Populated the database.')
 
-#modification for minitwit.py for Project 1 ends here
 def init_db():
     """Initializes the database."""
     db = get_db()

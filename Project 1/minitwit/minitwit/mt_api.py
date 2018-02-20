@@ -2,6 +2,7 @@ from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, url_for, redirect, \
      render_template, abort, g, flash, _app_ctx_stack, jsonify, Blueprint, current_app
 from flask_jwt import JWT, jwt_required, current_identity
+from flask_jwt_simple import jwt_required, get_jwt_identity, create_jwt
 
 # configuration
 DATABASE = '/tmp/minitwit.db'
@@ -43,13 +44,16 @@ def get_authentication():
 @mt_api.route('/<username>/timeline', methods=['GET'])
 def user_timeline(username):
     #query the profile user for the next message
-    profile_user = query_db('select * from user where username = ?',
-                            [username], one=True)
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "Unauthorized"}), 401
+    #ID = get_user_id(profile_user)
     #query the messages from the db, copied from minitwit.py
     messages=query_db('''
             select message.*, user.* from message, user where
             user.user_id = message.author_id and user.user_id = ?
-            order by message.pub_date desc limit ?''', [profile_user['user_id'], PER_PAGE])
+            order by message.pub_date desc limit ?''',
+            [userID, PER_PAGE])
     # make timelines list
     timelines = []
     # for loop with the rows of messages and append them to timelines in a dicitonary format.
@@ -63,25 +67,51 @@ def user_timeline(username):
 
 @mt_api.route('/<username>/addMessage', methods=['POST'])
 def add_message():
-    while True:
-        break
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "Unauthorized"}), 401
+
 
 @mt_api.route('/<username>/following', methods=['GET'])
-def is_following(username):
-    while True:
-        break
+def following(username):
+    #query the profile user for the next message
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "Unauthorized"}), 401
 
+    people_following = query_db('''
+                                select * from follower where
+                                follower.whom_id = ?''',
+                                [userID])
+    people = []
+    for p in people_following:
+        person = query_db('''select * from user where user_id = ?''',
+                            [p['whom_id']])
+        people.append({'followers': str(person)})
+    return jsonify(followers=people), 200
+
+@mt_api.route('/<username>/followers', methods=['GET'])
+def followers(username):
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "Unauthorized"}), 401
+    people_following = query_db('''
+                                select * from follower where
+                                follower.whom_id = ?''', [userID])
+    people = []
+    for p in people_following:
+        person = query_db('''select * from user where user_id = ?''',
+                            [p['whom_id']])
+        people.append({'followers': str(person)})
+    return jsonify(followers=people), 200
 @mt_api.route('/<username>/follow', methods=['POST'])
 def follow_user(username):
-    while True:
-        break
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "Unauthorized"}), 401
 
 @mt_api.route('/<username>/unfollow', methods=['DELETE'])
 def unfollow_user(username):
-    while True:
-        break
-
-@mt_api.route('/login', methods=['GET', 'POST'])
-def login():
-    while True:
-        break
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "Unauthorized"}), 401

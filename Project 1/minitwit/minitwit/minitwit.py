@@ -32,7 +32,7 @@ app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
 app.register_blueprint(mt_api)
 
 def get_db():
-    """Opens a new database connection if there is none yet for the
+    """Opens a new database connection if therapi/obbo/timelinee is none yet for the
     current application context.
     """
     top = _app_ctx_stack.top
@@ -52,10 +52,24 @@ def close_database(exception):
 def populate_db():
     #populate the DATABASE
     db = get_db()
+    #1
     db.execute('''INSERT INTO user (username, email, pw_hash)
                 VALUES (?,?,?)''', ['obbo','ob@mgail.com', generate_password_hash('123')])
+    #2
     db.execute('''INSERT INTO user (username, email, pw_hash)
                 VALUES (?,?,?)''', ['bobjUmbo', 'bobjumbo@gmail.com', generate_password_hash('1234')])
+    #3
+    db.execute('''INSERT INTO user (username, email, pw_hash)
+                VALUES (?,?,?)''', ['jeff', 'jeffdillon@gmail.com', generate_password_hash('password')])
+    #4
+    db.execute('''INSERT INTO user (username, email, pw_hash)
+                VALUES (?,?,?)''', ['annie', 'edison@gmail.com', generate_password_hash('nopass')])
+    #5
+    db.execute('''INSERT INTO user (username, email, pw_hash)
+                VALUES (?,?,?)''', ['troy', 'barnes@gmail.com', generate_password_hash('morning')])
+    #6
+    db.execute('''INSERT INTO user (username, email, pw_hash)
+                VALUES (?,?,?)''', ['abed', 'hi@gmail.com', generate_password_hash('timespace')])
     with app.open_resource('population.sql', mode = 'r') as f:
         #print f.read()
         db.cursor().executescript(f.read())

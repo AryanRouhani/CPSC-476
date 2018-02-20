@@ -1,3 +1,4 @@
+import time
 from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, url_for, redirect, \
      render_template, abort, g, flash, _app_ctx_stack, jsonify, Blueprint, current_app
@@ -46,7 +47,7 @@ def user_timeline(username):
     #query the profile user for the next message
     userID = get_user_id(username)
     if userID == None:
-        return jsonify({'Message': "Unauthorized"}), 401
+        return jsonify({'Message': 'No such user'}), 404
     #ID = get_user_id(profile_user)
     #query the messages from the db, copied from minitwit.py
     messages=query_db('''
@@ -65,19 +66,30 @@ def user_timeline(username):
     # return json of the timelines with http status code 200
     return jsonify(user_timelines=timelines), 200
 
-@mt_api.route('/<username>/addMessage', methods=['POST'])
-def add_message():
+@mt_api.route('/<username>/timeline', methods=['POST'])
+def add_message(username):
     userID = get_user_id(username)
     if userID == None:
-        return jsonify({'Message': "Unauthorized"}), 401
+        return jsonify({'Message': 'No such user'}), 404
 
+    testData = 'This is the test message'
+    data = request.get_json().get(testData, None)
+
+    if data == None:
+        return jsonify({'Message': 'Empty'}), 400
+
+    db = get_db()
+    db.execute('''INSERT INTO message (author_id, text, pub_date)
+                 VALUES (?,?,?)''', (userID, testData, int(time.time())))
+    db.commit()
+    return jsonify({'Message': 'Message was recorded'}), 200
 
 @mt_api.route('/<username>/following', methods=['GET'])
 def following(username):
     #query the profile user for the next message
     userID = get_user_id(username)
     if userID == None:
-        return jsonify({'Message': "Unauthorized"}), 401
+        return jsonify({'Message': "No such User"}), 404
 
     people_following = query_db('''
                                 select * from follower where
@@ -104,14 +116,40 @@ def followers(username):
                             [p['whom_id']])
         people.append({'followers': str(person)})
     return jsonify(followers=people), 200
-@mt_api.route('/<username>/follow', methods=['POST'])
+
+@mt_api.route('/<username>/following', methods=['POST'])
 def follow_user(username):
     userID = get_user_id(username)
     if userID == None:
-        return jsonify({'Message': "Unauthorized"}), 401
+        return jsonify({'Message': "No such user"}), 404
 
-@mt_api.route('/<username>/unfollow', methods=['DELETE'])
+    test = get_user_id('jeff')
+
+    db = get_db()
+    db.execute('''INSERT INTO FOLLOWER (who_id, whom_id)
+                VALUES (?,?)''', [test, userID])
+    db.commit()
+    user = query_db('select username from user where user_id = ?',
+                            [userID])
+    return jsonify({'Message': 'Following ' + str(userID)}), 200
+
+@mt_api.route('/<username>/following', methods=['DELETE'])
 def unfollow_user(username):
     userID = get_user_id(username)
     if userID == None:
         return jsonify({'Message': "Unauthorized"}), 401
+
+    userID = get_user_id(username)
+    if userID == None:
+        return jsonify({'Message': "No such user"}), 404
+
+    test = get_user_id('jeff')
+
+    db = get_db()
+    db.execute('''DELETE FROM FOLLOWER WHERE who_id = ? and whom_id=?''',
+                [userID, test])
+    db.commit()
+
+    user = query_db('select username from user where user_id = ?',
+                            [userID])
+    return jsonify({'Message': 'Now unfollowing ' + str(userID)}), 200

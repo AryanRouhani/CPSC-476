@@ -1,5 +1,6 @@
 import time
 from sqlite3 import dbapi2 as sqlite3
+from hashlib import md5
 from flask import Flask, request, session, url_for, redirect, \
      render_template, abort, g, flash, _app_ctx_stack, jsonify, Blueprint, current_app
 from flask_jwt import JWT, jwt_required, current_identity
@@ -37,10 +38,19 @@ def query_db(query, args=(), one=False):
 
 # HTTP service GET
 @mt_api.route('/authentication', methods=['GET'])
-def get_authentication():
-    user = query_db('''SELECT * From user
-                    WHERE username = ?''', [request.form['username']], one=True)
-    return user
+def authentication():
+
+    username = 'shirley'
+    password = '12345'
+    user = query_db(''' SELECT username FROM user''')
+    userList = list(user)
+    passwords = query_db(''' SELECT pw_hash FROM user''')
+    passList = list(passwords)
+
+    if username not in userList or password not in passList:
+        return jsonify({'Message':'Username or password incorrect'})
+
+    return jsonify({'Message':'Username and Password verified'})
 
 @mt_api.route('/<username>/timeline', methods=['GET'])
 def user_timeline(username):
@@ -72,10 +82,9 @@ def add_message(username):
     if userID == None:
         return jsonify({'Message': 'No such user'}), 404
 
-    testData = 'This is the test message'
-    data = request.get_json().get(testData, None)
+    testData = 'This is the test message2'
 
-    if data == None:
+    if testData == None:
         return jsonify({'Message': 'Empty'}), 400
 
     db = get_db()
@@ -99,7 +108,7 @@ def following(username):
     for p in people_following:
         person = query_db('''select * from user where user_id = ?''',
                             [p['whom_id']])
-        people.append({'followers': str(person)})
+        people.append({'followers': str(person[0]['username'])})
     return jsonify(followers=people), 200
 
 @mt_api.route('/<username>/followers', methods=['GET'])
@@ -114,7 +123,7 @@ def followers(username):
     for p in people_following:
         person = query_db('''select * from user where user_id = ?''',
                             [p['who_id']])
-        people.append({'followers': str(person)})
+        people.append({'followers': str(person[0]['username'])})
     return jsonify(followers=people), 200
 
 @mt_api.route('/<username>/following', methods=['POST'])
@@ -127,11 +136,11 @@ def follow_user(username):
 
     db = get_db()
     db.execute('''INSERT INTO FOLLOWER (who_id, whom_id)
-                VALUES (?,?)''', [test, userID])
+                VALUES (?,?)''', [userID, test])
     db.commit()
     user = query_db('select username from user where user_id = ?',
-                            [userID])
-    return jsonify({'Message': 'Following ' + str(userID)}), 200
+                            [test])
+    return jsonify({'Message': 'Following ' + str(user[0]['username'])}), 200
 
 @mt_api.route('/<username>/following', methods=['DELETE'])
 def unfollow_user(username):
@@ -151,5 +160,5 @@ def unfollow_user(username):
     db.commit()
 
     user = query_db('select username from user where user_id = ?',
-                            [userID])
-    return jsonify({'Message': 'Now unfollowing ' + str(userID)}), 200
+                            [test])
+    return jsonify({'Message': 'Now unfollowing ' + str(user[0]['username'])}), 200

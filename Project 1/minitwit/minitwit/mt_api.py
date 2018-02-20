@@ -5,6 +5,7 @@ from flask import Flask, request, session, url_for, redirect, \
      render_template, abort, g, flash, _app_ctx_stack, jsonify, Blueprint, current_app
 from flask_jwt import JWT, jwt_required, current_identity
 from flask_jwt_simple import jwt_required, get_jwt_identity, create_jwt
+from werkzeug import check_password_hash, generate_password_hash
 
 # configuration
 DATABASE = '/tmp/minitwit.db'
@@ -39,18 +40,18 @@ def query_db(query, args=(), one=False):
 # HTTP service GET
 @mt_api.route('/authentication', methods=['GET'])
 def authentication():
-
     username = 'shirley'
     password = '12345'
     user = query_db(''' SELECT username FROM user''')
-    userList = list(user)
     passwords = query_db(''' SELECT pw_hash FROM user''')
-    passList = list(passwords)
 
-    if username not in userList or password not in passList:
-        return jsonify({'Message':'Username or password incorrect'})
+    for i in range(len(passwords)):
+        print str(passwords[i][0])
+        if password in str(passwords[i][0]) and username in str(user[i][0]):
+            #print user[i]
+            return jsonify({'Message': 'Username and Password is verified'})
 
-    return jsonify({'Message':'Username and Password verified'})
+    return jsonify({'Message':'Username and Password not verified'})
 
 @mt_api.route('/<username>/timeline', methods=['GET'])
 def user_timeline(username):
@@ -82,7 +83,7 @@ def add_message(username):
     if userID == None:
         return jsonify({'Message': 'No such user'}), 404
 
-    testData = 'This is the test message2'
+    testData = 'This is the test message'
 
     if testData == None:
         return jsonify({'Message': 'Empty'}), 400

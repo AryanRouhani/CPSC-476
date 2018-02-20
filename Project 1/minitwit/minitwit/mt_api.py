@@ -93,7 +93,7 @@ def following(username):
 
     people_following = query_db('''
                                 select * from follower where
-                                follower.whom_id = ?''',
+                                follower.who_id = ?''',
                                 [userID])
     people = []
     for p in people_following:
@@ -113,7 +113,7 @@ def followers(username):
     people = []
     for p in people_following:
         person = query_db('''select * from user where user_id = ?''',
-                            [p['whom_id']])
+                            [p['who_id']])
         people.append({'followers': str(person)})
     return jsonify(followers=people), 200
 

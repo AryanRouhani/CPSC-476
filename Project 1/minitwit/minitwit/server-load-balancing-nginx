@@ -1,0 +1,11 @@
+upstream mtwt  {
+  server localhost:5000;
+  server localhost:5001;
+  server localhost:5002;
+}
+
+upstream mtapi{
+  server localhost:5003;
+  server localhost:5004;
+  server localhost:5005;
+}

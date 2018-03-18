@@ -1,0 +1,13 @@
+http {
+  server {
+    listen 80;
+    server_name localhost;
+    proxy_pass mtwt
+  }
+
+  server {
+    listen 8080;
+    server_name localhost;
+    proxy_pass mtapi
+  }
+}

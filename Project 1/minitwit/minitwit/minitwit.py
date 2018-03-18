@@ -25,6 +25,7 @@ DATABASE = '/tmp/minitwit.db'
 PER_PAGE = 30
 DEBUG = True
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
+MT_API_URL = 'http://127.0.0.1:5001'
 
 # create our little application :)
 app = Flask('minitwit')
@@ -79,7 +80,7 @@ def populate_db():
 # HTTP service GET
 @app.route('/authentication', methods=['GET'])
 def authentication():
-    r = requests.get('http://127.0.0.1:5001/internal/authentication')
+    r = requests.get('{}/internal/authentication'.format(MT_API_URL))
     return jsonify(r.json())
 
 @app.cli.command('populatedb')
@@ -151,7 +152,12 @@ def timeline():
     #                                 where who_id = ?))
     #     order by message.pub_date desc limit ?''',
     #     [session['user_id'], session['user_id'], PER_PAGE]))
-    r = requests.get()
+    
+    if not g.user:
+        public_time_line = requests.get('{}/public'.format(MT_API_URL))
+        return jsonify(public_time_line.json())
+    user_timeline = requests.get('{}/{}/timeline'.format(MT_API_URL, session['user_id']))
+    return jsonify(user_timeline.json())
 
 
 @app.route('/public')
@@ -161,14 +167,14 @@ def public_timeline():
     #     select message.*, user.* from message, user
     #     where message.author_id = user.user_id
     #     order by message.pub_date desc limit ?''', [PER_PAGE]))
-    r = requests.get('http://127.0.0.1:5001/public')
-    return jsonify(r.jason())
+    r = requests.get('{}/public'.format(MT_API_URL))
+    return jsonify(r.json())
 
 
 @app.route('/<username>')
 def user_timeline(username):
     """Display's a users tweets."""
-    r = requests.get('http://127.0.0.1:5001/{}/timeline'.format(username))
+    r = requests.get('{}/{}/timeline'.format(MT_API_URL,username))
     return jsonify(r.json())
 
 @app.route('/<username>/follow')
@@ -185,7 +191,7 @@ def follow_user(username):
     # db.commit()
     # flash('You are now following "%s"' % username)
     # return redirect(url_for('user_timeline', username=username))
-    r = requests.post('http://127.0.0.1:5001/{}/following'.format(username))
+    r = requests.post('{}/{}/following'.format(MT_API_URL,username))
     return jsonify(r.json())
 
 @app.route('/<username>/unfollow')
@@ -202,7 +208,7 @@ def unfollow_user(username):
     # db.commit()
     # flash('You are no longer following "%s"' % username)
     # return redirect(url_for('user_timeline', username=username))
-    r = requests.delete('http://127.0.0.1:5001/{}/following'.format(username))
+    r = requests.delete('{}/{}/following'.format(MT_API_URL,username))
     return jsonify(r.json())
 
 
@@ -219,7 +225,7 @@ def add_message():
     #     db.commit()
     #     flash('Your message was recorded')
     # return redirect(url_for('timeline'))
-    r = requests.post('http://127.0.0.1:5001/{}/timeline'.format(username))
+    r = requests.post('{}/{}/timeline'.format(MT_API_URL,username))
     return jsonify(r.json())
 
 

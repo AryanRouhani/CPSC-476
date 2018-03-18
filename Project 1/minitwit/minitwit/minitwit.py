@@ -14,10 +14,10 @@ from sqlite3 import dbapi2 as sqlite3
 from hashlib import md5
 from datetime import datetime
 from flask import Flask, request, session, url_for, redirect, \
-     render_template, abort, g, flash, _app_ctx_stack
+     render_template, abort, g, flash, _app_ctx_stack, jsonify
 from werkzeug import check_password_hash, generate_password_hash
 
-from mt_api import mt_api
+# from mt_api import mt_api
 
 # configuration
 DATABASE = '/tmp/minitwit.db'
@@ -29,7 +29,7 @@ SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
 app = Flask('minitwit')
 app.config.from_object(__name__)
 app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
-app.register_blueprint(mt_api)
+# app.register_blueprint(mt_api)
 
 def get_db():
     """Opens a new database connection if therapi/obbo/timelinee is none yet for the
@@ -74,6 +74,23 @@ def populate_db():
         #print f.read()
         db.cursor().executescript(f.read())
     db.commit()
+# HTTP service GET
+@app.route('/authentication', methods=['GET'])
+def authentication():
+    username = 'shirley'
+    password = '12345'
+    user = query_db(''' SELECT username FROM user''')
+    passwords = query_db(''' SELECT pw_hash FROM user''')
+
+    for i in range(len(passwords)):
+        print str(passwords[i][0])
+        if password in str(passwords[i][0]) and username in str(user[i][0]):
+            #print user[i]
+            return jsonify({'Message': 'Username and Password is verified'})
+
+    return jsonify({'Message':'Username and Password not verified'})
+
+
 
 @app.cli.command('populatedb')
 def populate_db_command():

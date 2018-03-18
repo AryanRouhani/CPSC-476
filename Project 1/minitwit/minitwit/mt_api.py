@@ -15,6 +15,12 @@ SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
 
 mt_api = Blueprint('mt_api', __name__, template_folder='templates')
 
+# create our little application :)
+app = Flask('mt_api')
+app.config.from_object(__name__)
+app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
+app.register_blueprint(mt_api)
+
 def get_db():
     """Opens a new database connection if there is none yet for the
     current application context.
@@ -36,6 +42,10 @@ def query_db(query, args=(), one=False):
     cur = get_db().execute(query, args)
     rv = cur.fetchall()
     return (rv[0] if rv else None) if one else rv
+
+@mt_api.route('/hello', methods=['GET'])
+def hooman():
+    return "hello hooman!"
 
 # HTTP service GET
 @mt_api.route('/authentication', methods=['GET'])

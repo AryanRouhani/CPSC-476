@@ -1,1 +1,1 @@
-web: flask run --port $PORT
+web: export FLASK_APP=mt_api.py; flask run --port $PORT

@@ -13,13 +13,13 @@ PER_PAGE = 30
 DEBUG = True
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
 
-mt_api = Blueprint('mt_api', __name__, template_folder='templates')
+# mt_api = Blueprint('mt_api', __name__, template_folder='templates')
 
 # create our little application :)
-app = Flask('mt_api')
-app.config.from_object(__name__)
-app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
-app.register_blueprint(mt_api)
+mt_api = Flask('mt_api')
+mt_api.config.from_object(__name__)
+mt_api.config.from_envvar('MINITWIT_SETTINGS', silent=True)
+# mt_api.register_blueprint(mt_api)
 
 def get_db():
     """Opens a new database connection if there is none yet for the
@@ -48,7 +48,7 @@ def hooman():
     return "hello hooman!"
 
 # HTTP service GET
-@mt_api.route('/authentication', methods=['GET'])
+@mt_api.route('/internal/authentication', methods=['GET'])
 def authentication():
     username = 'shirley'
     password = '12345'

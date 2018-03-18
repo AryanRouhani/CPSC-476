@@ -10,6 +10,7 @@
 """
 
 import time
+import requests
 from sqlite3 import dbapi2 as sqlite3
 from hashlib import md5
 from datetime import datetime
@@ -74,23 +75,12 @@ def populate_db():
         #print f.read()
         db.cursor().executescript(f.read())
     db.commit()
+
 # HTTP service GET
 @app.route('/authentication', methods=['GET'])
 def authentication():
-    username = 'shirley'
-    password = '12345'
-    user = query_db(''' SELECT username FROM user''')
-    passwords = query_db(''' SELECT pw_hash FROM user''')
-
-    for i in range(len(passwords)):
-        print str(passwords[i][0])
-        if password in str(passwords[i][0]) and username in str(user[i][0]):
-            #print user[i]
-            return jsonify({'Message': 'Username and Password is verified'})
-
-    return jsonify({'Message':'Username and Password not verified'})
-
-
+    r = requests.get('http://127.0.0.1:5001/internal/authentication')
+    return jsonify(r.json())
 
 @app.cli.command('populatedb')
 def populate_db_command():

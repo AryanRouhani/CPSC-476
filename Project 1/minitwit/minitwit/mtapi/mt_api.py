@@ -63,6 +63,49 @@ def authentication():
 
     return jsonify({'Message':'Username and Password not verified'})
 
+@mt_api.route('/<username>', methods=['GET'])
+def timeline(username):
+    """Shows a users timeline or if no user is logged in it will
+    redirect to the public timeline.  This timeline shows the user's
+    messages as well as all the messages of followed users.
+    """
+    userID = get_user_id(username)
+
+    if userID == None:
+        return jsonify({'Message': 'No such user'}), 404
+        
+    messages=query_db('''
+            select message.*, user.* from message, user where
+            user.user_id = message.author_id and user.user_id = ?
+            order by message.pub_date desc limit ?''',
+            [userID, PER_PAGE])
+        #make timeline list 
+        
+    timelines = [] 
+    for m in messages:
+            timelines.append({'username': m['username'],
+                           'text': m['text'],
+                           'pub_date': m['pub_date']})
+    # return json of the timelines with http status code 200
+    return jsonify(timelines), 200
+
+@mt_api.route('/public', methods=['GET'])
+def public_timeline():
+    """Displays the latest messages of all users."""
+    messages=query_db('''
+        select message.*, user.* from message, user
+        where message.author_id = user.user_id
+        order by message.pub_date desc limit ?''', [PER_PAGE])
+        #make timeline list
+        
+    timelines = []
+    for m in messages:
+            timelines.append({'username': m['username'],
+                           'text': m['text'],
+                           'pub_date': m['pub_date']})
+    # return json of the timelines with http status code 200
+    return jsonify(timelines), 200
+
 @mt_api.route('/<username>/timeline', methods=['GET'])
 def user_timeline(username):
     #query the profile user for the next message

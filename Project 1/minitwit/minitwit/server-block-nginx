@@ -1,27 +1,26 @@
-http {
-  server {
-    listen 80;
-    server_name localhost;
-    proxy_pass mtwt
-    root /var/www/minitwit.com/minitwit;
-  }
-
-  server {
-    listen 8080;
-    server_name localhost;
-    proxy_pass mtapi
-    root /var/www/minitwit.com/minitwit/mtapi;
-  }
-
-  upstream mtwt  {
-    server localhost:5000;
-    server localhost:5001;
-    server localhost:5002;
-  }
-
-  upstream mtapi{
-    server localhost:5003;
-    server localhost:5004;
-    server localhost:5005;
+server {
+  listen 80;
+  location / {
+    proxy_pass http://mtwt;
   }
 }
+
+server {
+  listen 8080;
+  location / {
+    proxy_pass http://mtapi;
+  }
+}
+
+upstream mtwt  {
+  server localhost:5000;
+  server localhost:5001;
+  server localhost:5002;
+}
+
+upstream mtapi{
+  server localhost:5003;
+  server localhost:5004;
+  server localhost:5005;
+}
+

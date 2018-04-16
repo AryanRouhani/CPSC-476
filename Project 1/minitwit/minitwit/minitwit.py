@@ -25,7 +25,7 @@ DATABASE = '/tmp/minitwit.db'
 PER_PAGE = 30
 DEBUG = True
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
-MT_API_URL = 'http://127.0.0.1:5004'
+MT_API_URL = 'http://127.0.0.1:5003'
 
 # create our little application :)
 app = Flask('minitwit')

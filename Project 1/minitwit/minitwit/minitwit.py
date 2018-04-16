@@ -299,7 +299,7 @@ def register():
               username, email, pw_hash) values (?, ?, ?)''',
               [request.form['username'], request.form['email'],
                generate_password_hash(request.form['password'])])
-            db.commit()
+            # db.commit()
             flash('You were successfully registered and can login now')
             return redirect(url_for('login'))
     return render_template('register.html', error=error)

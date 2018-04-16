@@ -53,7 +53,6 @@ def get_db():
     """
     cluster = Cluster()
     session = cluster.connect(app.config['DATABASE'])
-    session.execute()
     return session
 
 

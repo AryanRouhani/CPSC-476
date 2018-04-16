@@ -1,1 +1,2 @@
+//to run 3 instances enter : foreman start -p 5003 -c web=3
 web: export FLASK_APP=mt_api.py; flask run --port $PORT

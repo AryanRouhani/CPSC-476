@@ -1,1 +1,2 @@
+//to run 3 instances enter : foreman start -p 5000 -c web=3
 web: export FLASK_APP=minitwit.py; flask run --port $PORT

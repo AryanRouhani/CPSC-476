@@ -11,17 +11,21 @@
 
 import time
 import requests
+from schema import cassandra_initdb_queries
+from population import cassandra_populatedb_queries
 from sqlite3 import dbapi2 as sqlite3
 from hashlib import md5
 from datetime import datetime
 from flask import Flask, request, session, url_for, redirect, \
      render_template, abort, g, flash, _app_ctx_stack, jsonify
 from werkzeug import check_password_hash, generate_password_hash
+from cassandra.cluster import Cluster
 
 # from mt_api import mt_api
 
 # configuration
-DATABASE = '/tmp/minitwit.db'
+# DATABASE = '/tmp/minitwit.db'
+DATABASE = 'minitwit'
 PER_PAGE = 30
 DEBUG = True
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
@@ -33,49 +37,63 @@ app.config.from_object(__name__)
 app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
 # app.register_blueprint(mt_api)
 
+# def get_db():
+#     """Opens a new database connection if therapi/obbo/timelinee is none yet for the
+#     current application context.
+#     """
+#     top = _app_ctx_stack.top
+#     if not hasattr(top, 'sqlite_db'):
+#         top.sqlite_db = sqlite3.connect(app.config['DATABASE'])
+#         top.sqlite_db.row_factory = sqlite3.Row
+#     return top.sqlite_db
+
 def get_db():
     """Opens a new database connection if therapi/obbo/timelinee is none yet for the
     current application context.
     """
-    top = _app_ctx_stack.top
-    if not hasattr(top, 'sqlite_db'):
-        top.sqlite_db = sqlite3.connect(app.config['DATABASE'])
-        top.sqlite_db.row_factory = sqlite3.Row
-    return top.sqlite_db
+    cluster = Cluster()
+    session = cluster.connect(app.config['DATABASE'])
+    session.execute()
+    return session
 
 
-@app.teardown_appcontext
-def close_database(exception):
-    """Closes the database again at the end of the request."""
-    top = _app_ctx_stack.top
-    if hasattr(top, 'sqlite_db'):
-        top.sqlite_db.close()
+# @app.teardown_appcontext
+# def close_database(exception):
+#     """Closes the database again at the end of the request."""
+#     top = _app_ctx_stack.top
+#     if hasattr(top, 'sqlite_db'):
+#         top.sqlite_db.close()
+
+# def populate_db():
+#     #populate the DATABASE
+#     db = get_db()
+#     #1
+#     db.execute('''INSERT INTO user (username, email, pw_hash)
+#                 VALUES (?,?,?)''', ['obbo','ob@mgail.com', generate_password_hash('123')])
+#     #2
+#     db.execute('''INSERT INTO user (username, email, pw_hash)
+#                 VALUES (?,?,?)''', ['bobjUmbo', 'bobjumbo@gmail.com', generate_password_hash('1234')])
+#     #3
+#     db.execute('''INSERT INTO user (username, email, pw_hash)
+#                 VALUES (?,?,?)''', ['jeff', 'jeffdillon@gmail.com', generate_password_hash('password')])
+#     #4
+#     db.execute('''INSERT INTO user (username, email, pw_hash)
+#                 VALUES (?,?,?)''', ['annie', 'edison@gmail.com', generate_password_hash('nopass')])
+#     #5
+#     db.execute('''INSERT INTO user (username, email, pw_hash)
+#                 VALUES (?,?,?)''', ['troy', 'barnes@gmail.com', generate_password_hash('morning')])
+#     #6
+#     db.execute('''INSERT INTO user (username, email, pw_hash)
+#                 VALUES (?,?,?)''', ['abed', 'hi@gmail.com', generate_password_hash('timespace')])
+#     with app.open_resource('population.sql', mode = 'r') as f:
+#         #print f.read()
+#         db.cursor().executescript(f.read())
+#     db.commit()
 
 def populate_db():
-    #populate the DATABASE
-    db = get_db()
-    #1
-    db.execute('''INSERT INTO user (username, email, pw_hash)
-                VALUES (?,?,?)''', ['obbo','ob@mgail.com', generate_password_hash('123')])
-    #2
-    db.execute('''INSERT INTO user (username, email, pw_hash)
-                VALUES (?,?,?)''', ['bobjUmbo', 'bobjumbo@gmail.com', generate_password_hash('1234')])
-    #3
-    db.execute('''INSERT INTO user (username, email, pw_hash)
-                VALUES (?,?,?)''', ['jeff', 'jeffdillon@gmail.com', generate_password_hash('password')])
-    #4
-    db.execute('''INSERT INTO user (username, email, pw_hash)
-                VALUES (?,?,?)''', ['annie', 'edison@gmail.com', generate_password_hash('nopass')])
-    #5
-    db.execute('''INSERT INTO user (username, email, pw_hash)
-                VALUES (?,?,?)''', ['troy', 'barnes@gmail.com', generate_password_hash('morning')])
-    #6
-    db.execute('''INSERT INTO user (username, email, pw_hash)
-                VALUES (?,?,?)''', ['abed', 'hi@gmail.com', generate_password_hash('timespace')])
-    with app.open_resource('population.sql', mode = 'r') as f:
-        #print f.read()
-        db.cursor().executescript(f.read())
-    db.commit()
+    session = get_db()
+    for q in cassandra_populatedb_queries:
+        session.execute(q)
 
 # HTTP service GET
 @app.route('/authentication', methods=['GET'])
@@ -88,13 +106,17 @@ def populate_db_command():
     populate_db()
     print('Populated the database.')
 
-def init_db():
-    """Initializes the database."""
-    db = get_db()
-    with app.open_resource('schema.sql', mode='r') as f:
-        db.cursor().executescript(f.read())
-    db.commit()
+# def init_db():
+#     """Initializes the database."""
+#     db = get_db()
+#     with app.open_resource('schema.sql', mode='r') as f:
+#         db.cursor().executescript(f.read())
+#     db.commit()
 
+def init_db():
+    session = get_db()
+    for q in cassandra_initdb_queries:
+        session.execute(q)
 
 @app.cli.command('initdb')
 def initdb_command():
@@ -103,12 +125,16 @@ def initdb_command():
     print('Initialized the database.')
 
 
-def query_db(query, args=(), one=False):
-    """Queries the database and returns a list of dictionaries."""
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    return (rv[0] if rv else None) if one else rv
+# def query_db(query, args=(), one=False):
+#     """Queries the database and returns a list of dictionaries."""
+#     cur = get_db().execute(query, args)
+#     rv = cur.fetchall()
+#     return (rv[0] if rv else None) if one else rv
 
+def query_db(query, args=(), one=False):
+    session = get_db()
+    r = session.execute(query)
+    return r
 
 def get_user_id(username):
     """Convenience method to look up the id for a username."""
